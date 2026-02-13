@@ -1,5 +1,9 @@
 # Skylight Local
 
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.1.0-blue.svg)](https://www.home-assistant.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/scheduleSettings`, `/statusPage`).
 
 ## Status
@@ -31,7 +35,11 @@ Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/
 
 ## Installation
 
-### Option 1: HACS (recommended)
+### Quick HACS Install
+
+[![Open your Home Assistant instance and show the add custom repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=b3cksy&repository=skylight-local&category=integration)
+
+If the button does not work, follow the manual HACS steps below.`r`n`r`n### Option 1: HACS (recommended)
 
 1. Open HACS in Home Assistant.
 2. Add this repository as a custom repository (type: `Integration`).
@@ -182,5 +190,10 @@ Use at your own risk.
 ## License
 
 MIT (see `LICENSE`).
+
+
+
+
+
 
 
