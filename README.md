@@ -39,7 +39,9 @@ Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/
 
 [![Open your Home Assistant instance and show the add custom repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=b3cksy&repository=skylight-local&category=integration)
 
-If the button does not work, follow the manual HACS steps below.`r`n`r`n### Option 1: HACS (recommended)
+If the button does not work, follow the manual HACS steps below.
+
+### Option 1: HACS (recommended)
 
 1. Open HACS in Home Assistant.
 2. Add this repository as a custom repository (type: `Integration`).
