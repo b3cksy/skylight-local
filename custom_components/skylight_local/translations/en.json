@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuration",
+        "description": "Enter connection details.",
+        "data": {
+          "lamp_ip": "Lamp IP",
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect.",
+      "invalid_ip": "Invalid IP address."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  }
+}

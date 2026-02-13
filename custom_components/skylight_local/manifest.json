@@ -1,0 +1,13 @@
+{
+  "domain": "skylight_local",
+  "name": "Skylight Local",
+  "version": "0.1.0",
+  "documentation": "https://github.com/b3cksy/skylight-local#readme",
+  "issue_tracker": "https://github.com/b3cksy/skylight-local/issues",
+  "codeowners": [
+    "@b3cksy"
+  ],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "requirements": []
+}

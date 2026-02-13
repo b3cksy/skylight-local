@@ -1,0 +1,368 @@
+set_channel:
+  name: Set LED Channel
+  description: Set PWM value for one LED channel (ctrl=70..73).
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID. If omitted, runs for all Skylight entries.
+      required: false
+      selector:
+        text:
+    channel:
+      name: Channel
+      description: LED channel index (0-3).
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+          mode: slider
+    value:
+      name: Value
+      description: PWM percentage value.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+
+set_all_channels:
+  name: Set All Channels
+  description: Send full ctrl=74 payload (ch0..ch3, color_code, intensity).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    ch0:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+    ch1:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+    ch2:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+    ch3:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+    color_code:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: box
+    intensity:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          mode: box
+
+set_pwm_frequency:
+  name: Set PWM Frequency
+  description: Set PWM frequency in Hz (ctrl=75).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    hz:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          mode: box
+
+init_pwm:
+  name: Init PWM
+  description: Initialize LED PWM driver (ctrl=78).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+sync_rtc:
+  name: Sync RTC
+  description: Trigger RTC sync command (ctrl=6).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+set_timezone:
+  name: Set Timezone
+  description: Set timezone payload (ctrl=b<timezone>).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    timezone:
+      required: true
+      selector:
+        text:
+
+clear_schedule:
+  name: Clear Schedule
+  description: Clear schedule in lamp memory (params=4).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+save_schedule:
+  name: Save Schedule
+  description: Save current schedule to EEPROM (params=6).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+start_old_schedule:
+  name: Start Old Schedule Transfer
+  description: Start old schedule transfer sequence with item count (params=7_N).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    count:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 1024
+          step: 1
+          mode: box
+
+send_old_schedule_payload:
+  name: Send Old Schedule Payload
+  description: Send old schedule payload line (params=g_payload).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    payload:
+      required: true
+      selector:
+        text:
+
+start_safe_schedule:
+  name: Start Safe Schedule Transfer
+  description: Start safe schedule transfer sequence with item count (params=p_N).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    count:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 1024
+          step: 1
+          mode: box
+
+send_safe_schedule_payload:
+  name: Send Safe Schedule Payload
+  description: Send safe schedule payload line (params=s_payload).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    payload:
+      required: true
+      selector:
+        text:
+
+start_new_schedule:
+  name: Start New Schedule
+  description: Activate transferred schedule (params=r).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+add_clone:
+  name: Add Clone
+  description: Add clone MAC to master lamp (params=k<mac>).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    mac:
+      required: true
+      selector:
+        text:
+
+remove_clone:
+  name: Remove Clone
+  description: Remove clone MAC from master lamp (params=l<mac>).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    mac:
+      required: true
+      selector:
+        text:
+
+set_clone_mode:
+  name: Set Clone Mode
+  description: Put lamp into clone mode (params=i).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+clear_master_clone:
+  name: Clear Master And Clone
+  description: Clear master/clone bindings (params=j).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+set_night_mode:
+  name: Set Night Mode
+  description: Enable or disable night mode (ctrl=gt01/gt00).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    enabled:
+      required: true
+      selector:
+        boolean:
+
+manual_mode_1h:
+  name: Manual Mode For 1h
+  description: Set temporary manual mode for one hour (ctrl=gu1).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+manual_mode_default:
+  name: Manual Mode Default
+  description: Set manual mode as default (ctrl=gu3).
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+send_raw_command:
+  name: Send Raw Command
+  description: Send raw params or ctrl command to /scheduleSettings.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+    params:
+      required: false
+      selector:
+        text:
+    ctrl:
+      required: false
+      selector:
+        text:
+
+read_pwm_frequency:
+  name: Read PWM Frequency
+  description: Read current PWM frequency (ctrl=76). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+read_description:
+  name: Read Description
+  description: Read lamp description (ctrl=g0). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+read_led_status:
+  name: Read LED Status
+  description: Read LED status line (ctrl=g2). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+read_schedule_status:
+  name: Read Schedule Status
+  description: Read schedule status (ctrl=g30). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+read_schedule_string:
+  name: Read Schedule String
+  description: Read schedule payload string (ctrl=g31). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
+
+read_info_g8:
+  name: Read Info G8
+  description: Read coded info refresh (ctrl=g8). Stores raw response in diagnostics sensor attribute.
+  fields:
+    entry_id:
+      required: false
+      selector:
+        text:
