@@ -21,6 +21,7 @@ class SkylightEntity(Entity):
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
             manufacturer="Skylight",
-            model="Hyperbar/Hyperspot",
+            model="Hyperbar",
             configuration_url=f"http://{lamp_ip}",
         )
+
