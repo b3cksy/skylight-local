@@ -16,12 +16,18 @@ class SkylightEntity(Entity):
 
     def __init__(self, entry: ConfigEntry, controller: SkylightController) -> None:
         self._controller = controller
-        lamp_ip = entry.data.get(CONF_LAMP_IP, entry.data.get("host", "0.0.0.0"))
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title,
-            manufacturer="Skylight",
-            model="Hyperbar",
-            configuration_url=f"http://{lamp_ip}",
-        )
+        self._entry_id = entry.entry_id
+        self._entry_title = entry.title
+        self._lamp_ip = entry.data.get(CONF_LAMP_IP, entry.data.get("host", "0.0.0.0"))
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Build dynamic device info from the latest controller status."""
+        model = self._controller.status.model if self._controller.status else None
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._entry_title,
+            manufacturer="Skylight",
+            model=model,
+            configuration_url=f"http://{self._lamp_ip}",
+        )
