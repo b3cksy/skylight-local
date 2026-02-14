@@ -6,13 +6,6 @@
 
 Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/scheduleSettings`, `/statusPage`).
 
-## Status
-
-- Integration domain: `skylight_local`
-- Current integration version: `0.1.0`
-- HACS minimum Home Assistant version: `2026.1.0`
-- IoT class: `local_polling`
-
 ## Supported Lamps
 
 | Manufacturer | Model | Supported |
