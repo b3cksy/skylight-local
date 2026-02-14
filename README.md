@@ -14,17 +14,11 @@ Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/
 
 ## Features
 
-- Local control (no cloud dependency).
+- Local control (no WiFi dependency).
 - Config Flow setup in Home Assistant UI (IP + optional name).
-- Entity platforms:
-  - `sensor`
-  - `select`
-  - `number`
-  - `button`
-  - `switch`
 - Preset selection (`A1`..`F10`) with adjustable output power.
 - Manual PWM channel control for channels `0..3`.
-- Extended diagnostic and maintenance services (schedule transfer, clone management, raw commands, diagnostic reads).
+- Extended diagnostic and maintenance services.
 
 ## Installation
 
@@ -169,7 +163,6 @@ data:
 - Confirm the lamp IP is reachable from Home Assistant host.
 - Verify lamp local API endpoints respond:
   - `http://<lamp_ip>/statusPage`
-  - `http://<lamp_ip>/scheduleSettings`
 - If an entity appears stale, trigger an update or call one diagnostic read service.
 
 ## Disclaimer
