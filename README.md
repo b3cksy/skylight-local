@@ -4,7 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.1.0-blue.svg)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Unofficial Home Assistant integration for Skylight lamps over local HTTP API (`/scheduleSettings`, `/statusPage`).
+Unofficial Home Assistant integration for Skylight lamps over local HTTP API.
 
 ## Supported Lamps
 
