@@ -51,7 +51,7 @@ The Lovelace color-control card is maintained separately in the [Skylight Local 
 
 The screenshot below shows the separate Lovelace card from the Skylight Local Card repository.
 
-![Skylight Local Card dashboard preview](https://raw.githubusercontent.com/b3cksy/skylight-local-card/main/docs/skylight-local-card-preview.png)
+![Skylight Local Card dashboard preview](docs/skylight-local-card-preview.png)
 
 ## Configuration
 
