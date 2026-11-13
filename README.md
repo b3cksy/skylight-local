@@ -6,7 +6,7 @@
 
 Skylight Local is an unofficial Home Assistant integration for controlling compatible Skylight lamps over their local HTTP API. It communicates directly with the lamp on your local network; no vendor cloud account is used. The integration is configured through Home Assistant's UI and creates entities for everyday control as well as diagnostics and maintenance.
 
-The current HACS metadata sets Home Assistant `2026.1.0` as the minimum version. The version badge above reflects the current Home Assistant release line (`2026.11`).
+HACS requires Home Assistant `2026.11.0` or newer. This is the minimum supported version declared by the integration metadata.
 
 ## Supported Lamps
 
