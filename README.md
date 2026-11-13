@@ -47,7 +47,11 @@ If the button does not work, follow the manual HACS steps below.
 
 ## Optional dashboard card
 
-The Lovelace color-control card is maintained separately in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card). It requires this integration and uses its preset, power, and mode entities. See the card repository for installation and dashboard YAML configuration.
+The Lovelace color-control card is maintained separately in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card). It requires this integration and uses its preset, power, mode, and read-only schedule data entities. See the card repository for installation and dashboard YAML configuration.
+
+The screenshot below shows the separate Lovelace card from the Skylight Local Card repository.
+
+![Skylight Local Card dashboard preview](https://raw.githubusercontent.com/b3cksy/skylight-local-card/main/docs/skylight-local-card-preview.png)
 
 ## Configuration
 
