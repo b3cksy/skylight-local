@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import logging
 import re
 import time
@@ -294,6 +295,8 @@ class SkylightController:
         self._refresh_lock = asyncio.Lock()
         self._command_lock = asyncio.Lock()
         self._last_refresh_monotonic = 0.0
+        self._last_schedule_read_monotonic = 0.0
+        self._schedule_read_lock = asyncio.Lock()
         self.selected_preset = "A1"
         self.power = DEFAULT_POWER
         self.firmware_version: str | None = None
@@ -302,6 +305,8 @@ class SkylightController:
         self.mode = MODE_OFF
         self.lamp_is_on: bool | None = None
         self.last_raw_response: str | None = None
+        self.schedule_string: str | None = None
+        self.schedule_read_at: str | None = None
 
     def set_power(self, power: int) -> None:
         """Store output power percentage (0-100)."""
@@ -503,8 +508,19 @@ class SkylightController:
 
     async def read_schedule_string(self) -> str:
         response = await self._client.read_schedule_string()
+        self.schedule_string = response
         self.last_raw_response = response
+        self._last_schedule_read_monotonic = time.monotonic()
+        self.schedule_read_at = datetime.now(timezone.utc).isoformat()
         return response
+
+    async def refresh_schedule_string(self, *, max_age: float = 300) -> None:
+        """Refresh the lamp's read-only schedule snapshot at most every five minutes."""
+        async with self._schedule_read_lock:
+            now = time.monotonic()
+            if self.schedule_string is not None and now - self._last_schedule_read_monotonic < max_age:
+                return
+            await self.read_schedule_string()
 
     async def read_status_g8(self) -> str:
         response = await self._client.read_status_g8()

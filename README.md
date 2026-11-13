@@ -24,6 +24,7 @@ Other Skylight models have not been verified and are not currently listed as sup
 - Separate preset and mode selectors, plus buttons and a switch for Auto, Manual, Demo, and Off operation.
 - Power control from 0–100% and direct PWM controls for channels `0`–`3`.
 - Status and diagnostic sensors, plus services for schedules, clone/master configuration, maintenance, and raw commands.
+- Read-only schedule snapshot for cards that visualize the schedule stored in the lamp.
 
 ## Installation
 
@@ -105,6 +106,7 @@ Each configured lamp creates one config entry and one controller instance.
 - `Manual color`
 - `Calibration PWM`
 - `Schedule items count`
+- `Schedule data` (read-only raw schedule snapshot for dashboard cards)
 - `Is master`
 - `Night mode enabled`
 - `Schedule`

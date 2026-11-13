@@ -28,6 +28,7 @@ async def async_setup_entry(
         [
             SkylightFirmwareVersionSensor(entry, controller),
             SkylightModeSensor(entry, controller),
+            SkylightScheduleDataSensor(entry, controller),
             SkylightStatusAttributeSensor(
                 entry,
                 controller,
@@ -213,6 +214,29 @@ class SkylightModeSensor(SkylightBaseDiagnosticSensor):
     async def async_update(self) -> None:
         await super().async_update()
         self._attr_native_value = self._controller.mode
+
+
+class SkylightScheduleDataSensor(SkylightEntity, SensorEntity):
+    """Read-only raw schedule snapshot for custom dashboard cards."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:chart-timeline-variant"
+    _attr_name = "Schedule data"
+
+    def __init__(self, entry: ConfigEntry, controller: SkylightController) -> None:
+        super().__init__(entry, controller)
+        self._attr_unique_id = f"{entry.entry_id}_schedule_data"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        return {
+            "raw_schedule": self._controller.schedule_string,
+            "last_read": self._controller.schedule_read_at,
+        }
+
+    async def async_update(self) -> None:
+        await self._controller.refresh_schedule_string()
+        self._attr_native_value = "loaded" if self._controller.schedule_string is not None else None
 
 
 class SkylightStatusAttributeSensor(SkylightBaseDiagnosticSensor):

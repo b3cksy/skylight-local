@@ -351,7 +351,7 @@ read_schedule_status:
 
 read_schedule_string:
   name: Read Schedule String
-  description: Read schedule payload string (ctrl=g31). Stores raw response in diagnostics sensor attribute.
+  description: Read the lamp's schedule payload (ctrl=g31) for read-only display.
   fields:
     entry_id:
       required: false
