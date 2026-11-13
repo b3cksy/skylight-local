@@ -1,24 +1,29 @@
 # Skylight Local
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.1.0-blue.svg)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.11-blue.svg)](https://www.home-assistant.io/blog/2026/11/04/release-202611/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Unofficial Home Assistant integration for Skylight lamps over local HTTP API.
+Skylight Local is an unofficial Home Assistant integration for controlling compatible Skylight lamps over their local HTTP API. It communicates directly with the lamp on your local network; no vendor cloud account is used. The integration is configured through Home Assistant's UI and creates entities for everyday control as well as diagnostics and maintenance.
+
+The current HACS metadata sets Home Assistant `2026.1.0` as the minimum version. The version badge above reflects the current Home Assistant release line (`2026.11`).
 
 ## Supported Lamps
 
 | Manufacturer | Model | Supported |
 | --- | --- | --- |
-| Hyperbar | H-BAR-FM | Yes |
+| Hyperbar / Skylight | H-BAR-FM | Supported |
+
+Other Skylight models have not been verified and are not currently listed as supported.
 
 ## Features
 
-- Local control (no WiFi dependency).
-- Config Flow setup in Home Assistant UI (IP + optional name).
-- Preset selection (`A1`..`F10`) with adjustable output power.
-- Manual PWM channel control for channels `0..3`.
-- Extended diagnostic and maintenance services.
+- Local LAN control over HTTP; the lamp and Home Assistant must be able to reach each other on the network.
+- UI setup with the lamp's IP address and an optional device name.
+- A Home Assistant light entity with on/off, brightness, and 60 preset effects (`A1`..`F10`).
+- Separate preset and mode selectors, plus buttons and a switch for Auto, Manual, Demo, and Off operation.
+- Power control from 0–100% and direct PWM controls for channels `0`–`3`.
+- Status and diagnostic sensors, plus services for schedules, clone/master configuration, maintenance, and raw commands.
 
 ## Installation
 
@@ -28,17 +33,20 @@ Unofficial Home Assistant integration for Skylight lamps over local HTTP API.
 
 If the button does not work, follow the manual HACS steps below.
 
-### Option 1: HACS (recommended)
+### Option 1: HACS / Home Assistant Marketplace (recommended)
 
-1. Open HACS in Home Assistant.
-2. Add this repository as a custom repository (type: `Integration`).
-3. Install **Skylight Local**.
-4. Restart Home Assistant.
+1. Open HACS (shown as Marketplace in newer Home Assistant releases).
+2. If needed, add this repository as a custom repository with type `Integration`.
+3. Install **Skylight Local** and restart Home Assistant.
 
 ### Option 2: Manual
 
 1. Copy `custom_components/skylight_local` into your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
+
+## Optional dashboard card
+
+The Lovelace color-control card is maintained separately in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card). It requires this integration and uses its preset, power, and mode entities. See the card repository for installation and dashboard YAML configuration.
 
 ## Configuration
 
@@ -54,16 +62,17 @@ Each configured lamp creates one config entry and one controller instance.
 
 ### Light
 
-- `Light` with brightness control and the preset color palette (`A1`..`F10`) as effects.
+- `Light`: turns the lamp on/off, sets brightness, and selects presets (`A1`..`F10`) through the effect list.
+- Brightness and preset changes use the integration's manual preset control. The lamp's schedule is selected with the `Mode` entity or `Auto mode` button.
 
 ### Select
 
-- `Preset` (`A1`..`F10`)
-- `Mode` (`off`, `auto`, `manual`, `demo`)
+- `Preset` (`A1`..`F10`): applies the selected preset immediately.
+- `Mode` (`off`, `auto`, `manual`, `demo`): selects the operating mode.
 
 ### Number
 
-- `Power` (0-100%)
+- `Power` (0-100%): applies the current preset at the chosen output level.
 - `Channel 0` (0-100%)
 - `Channel 1` (0-100%)
 - `Channel 2` (0-100%)
@@ -158,7 +167,9 @@ data:
 ## Notes and Limitations
 
 - This is an unofficial project.
-- Commands are sent directly to the lamp over HTTP.
+- Only the H-BAR-FM is currently listed as supported; other models need verification.
+- Commands are sent directly to the lamp over the local network using HTTP.
+- Preset selection and brightness control are provided by the integration's light entity.
 - Connection failures and HTTP errors are surfaced as Home Assistant errors.
 - `send_raw_command` requires exactly one of: `params` or `ctrl`.
 
