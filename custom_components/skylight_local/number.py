@@ -37,7 +37,9 @@ class SkylightPowerNumber(SkylightEntity, NumberEntity):
     _attr_icon = "mdi:brightness-percent"
     _attr_native_min_value = 0
     _attr_native_max_value = 100
-    _attr_native_step = 1
+    # A decimal step keeps the Home Assistant service payload typed as float.
+    # The lamp itself accepts whole-number power percentages.
+    _attr_native_step = 0.1
     _attr_native_unit_of_measurement = "%"
     _attr_mode = NumberMode.SLIDER
 
@@ -49,8 +51,12 @@ class SkylightPowerNumber(SkylightEntity, NumberEntity):
     def native_value(self) -> float:
         return float(self._controller.power)
 
+    async def async_update(self) -> None:
+        """Refresh the manual power value from the lamp's live status."""
+        await self._controller.refresh_diagnostics()
+
     async def async_set_native_value(self, value: float) -> None:
-        await self._controller.set_power_and_apply(int(value))
+        await self._controller.set_power_and_apply(round(value))
         self.async_write_ha_state()
 
 

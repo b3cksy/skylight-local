@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import re
 
 PRESETS: Mapping[str, str] = {
     "A1": "7430h0i0j4.5k0l30m",
@@ -67,3 +68,10 @@ PRESETS: Mapping[str, str] = {
 }
 
 PRESET_OPTIONS = list(PRESETS)
+
+_COLOR_CODE_PATTERN = re.compile(r"k(\d+)l")
+COLOR_CODE_TO_PRESET: Mapping[int, str] = {
+    int(match.group(1)): preset
+    for preset, command in PRESETS.items()
+    if (match := _COLOR_CODE_PATTERN.search(command)) is not None
+}

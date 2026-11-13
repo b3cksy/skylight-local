@@ -17,7 +17,20 @@ from .const import DEFAULT_POWER, MODE_AUTO, MODE_DEMO, MODE_MANUAL, MODE_OFF
 from .presets import PRESETS
 
 _LOGGER = logging.getLogger(__name__)
-_POWER_PATTERN = re.compile(r"l-?\d+(?:\.\d+)?m$")
+_COLOR_CODE_TO_PRESET = {
+    int(match.group(1)): preset
+    for preset, command in PRESETS.items()
+    if (match := re.search(r"k(\d+)l", command)) is not None
+}
+_PRESET_CONTROL_PATTERN = re.compile(
+    r"^74"
+    r"(?P<ch0>-?\d+(?:\.\d+)?)h"
+    r"(?P<ch1>-?\d+(?:\.\d+)?)i"
+    r"(?P<ch2>-?\d+(?:\.\d+)?)j"
+    r"(?P<ch3>-?\d+(?:\.\d+)?)k"
+    r"(?P<color>\d+)l"
+    r"-?\d+(?:\.\d+)?m$"
+)
 
 
 @dataclass
@@ -279,6 +292,7 @@ class SkylightController:
     def __init__(self, client: SkylightHttpClient) -> None:
         self._client = client
         self._refresh_lock = asyncio.Lock()
+        self._command_lock = asyncio.Lock()
         self._last_refresh_monotonic = 0.0
         self.selected_preset = "A1"
         self.power = DEFAULT_POWER
@@ -286,6 +300,7 @@ class SkylightController:
         self.status: SkylightStatus | None = None
         self.is_auto_mode = False
         self.mode = MODE_OFF
+        self.lamp_is_on: bool | None = None
         self.last_raw_response: str | None = None
 
     def set_power(self, power: int) -> None:
@@ -294,15 +309,30 @@ class SkylightController:
 
     async def set_power_and_apply(self, power: int) -> None:
         """Update power and apply currently selected preset immediately."""
-        self.set_power(power)
-        await self.apply_preset()
+        async with self._command_lock:
+            self.set_power(power)
+            await self._apply_preset(self.selected_preset)
 
     def _ctrl_with_power(self, preset: str) -> str:
         base = PRESETS[preset]
-        ctrl = _POWER_PATTERN.sub(f"l{self.power}m", base)
-        if ctrl == base and not base.endswith("m"):
-            _LOGGER.warning("Preset %s has unexpected ctrl format: %s", preset, base)
-        return ctrl
+        match = _PRESET_CONTROL_PATTERN.fullmatch(base)
+        if match is None:
+            raise HomeAssistantError(f"Preset {preset} has unexpected ctrl format: {base}")
+
+        # Preset PWM values are encoded against the app's 30% reference level
+        # (the stock commands end in l30m). Convert that reference to the
+        # requested 0-100% output so HA's 100% reaches the app's full range.
+        scale = self.power / 30.0
+
+        def format_channel(name: str) -> str:
+            value = min(100.0, float(match.group(name)) * scale)
+            return f"{value:.2f}".rstrip("0").rstrip(".") or "0"
+
+        return (
+            f"74{format_channel('ch0')}h{format_channel('ch1')}i"
+            f"{format_channel('ch2')}j{format_channel('ch3')}k"
+            f"{match.group('color')}l{self.power}m"
+        )
 
     async def apply_preset(self, preset: str | None = None) -> None:
         """Apply preset after switching lamp to manual mode."""
@@ -310,30 +340,46 @@ class SkylightController:
         if target_preset not in PRESETS:
             raise HomeAssistantError(f"Unknown preset: {target_preset}")
 
+        async with self._command_lock:
+            await self._apply_preset(target_preset)
+
+    async def _apply_preset(self, target_preset: str) -> None:
+        """Send one complete preset update without interleaving another slider call."""
+
         ctrl = self._ctrl_with_power(target_preset)
-        await self._client.set_manual_mode()
+        entering_manual = self.mode != MODE_MANUAL
+        if entering_manual:
+            await self._client.set_manual_mode()
         await self._client.send_ctrl(ctrl)
+        # The mode transition makes the lamp blink. Do it only when entering
+        # manual mode; repeated power adjustments should update PWM channels only.
+        if entering_manual:
+            await self._client.manual_mode_1h()
         self.selected_preset = target_preset
         self.is_auto_mode = False
         self.mode = MODE_MANUAL
+        self.lamp_is_on = self.power > 0
 
     async def set_auto_mode(self) -> None:
         """Switch lamp to automatic schedule mode."""
         await self._client.set_auto_mode()
         self.is_auto_mode = True
         self.mode = MODE_AUTO
+        self.lamp_is_on = True
 
     async def set_off_mode(self) -> None:
         """Turn lamp off by disabling AUTO mode."""
         await self._client.set_off_mode()
         self.is_auto_mode = False
         self.mode = MODE_OFF
+        self.lamp_is_on = False
 
     async def set_demo_mode(self) -> None:
         """Enable demo mode."""
         await self._client.set_demo_mode()
         self.is_auto_mode = False
         self.mode = MODE_DEMO
+        self.lamp_is_on = True
 
     async def set_mode(self, mode: str) -> None:
         if mode == MODE_AUTO:
@@ -351,6 +397,8 @@ class SkylightController:
         await self._client.set_channel_pwm(channel, value)
         self.mode = MODE_MANUAL
         self.is_auto_mode = False
+        if value > 0:
+            self.lamp_is_on = True
 
     async def set_all_channels(
         self,
@@ -364,6 +412,7 @@ class SkylightController:
         await self._client.set_all_channels(ch0, ch1, ch2, ch3, color_code, intensity)
         self.mode = MODE_MANUAL
         self.is_auto_mode = False
+        self.lamp_is_on = intensity > 0 and any(value > 0 for value in (ch0, ch1, ch2, ch3))
 
     async def set_pwm_frequency(self, hz: int) -> None:
         await self._client.set_pwm_frequency(hz)
@@ -419,11 +468,13 @@ class SkylightController:
         await self._client.manual_mode_1h()
         self.mode = MODE_MANUAL
         self.is_auto_mode = False
+        self.lamp_is_on = True
 
     async def manual_mode_default(self) -> None:
         await self._client.manual_mode_default()
         self.mode = MODE_MANUAL
         self.is_auto_mode = False
+        self.lamp_is_on = True
 
     async def send_raw(self, *, params: str | None = None, ctrl: str | None = None) -> str:
         response = await self._client.send_raw(params=params, ctrl=ctrl)
@@ -470,7 +521,31 @@ class SkylightController:
             self.firmware_version = await self._client.get_firmware_version()
             status_raw = await self._client.get_status_page()
             self.status = parse_status_page(status_raw)
+            if self.status.manual_color is not None:
+                color_code = int(self.status.manual_color)
+                if preset := _COLOR_CODE_TO_PRESET.get(color_code):
+                    self.selected_preset = preset
+            if self.status.schedule_enabled:
+                self.lamp_is_on = True
+            elif self.status.manual_intensity is not None:
+                channel_values = (self.status.pwm0, self.status.pwm1, self.status.pwm2, self.status.pwm3)
+                if all(value is not None for value in channel_values):
+                    self.lamp_is_on = any(value > 0 for value in channel_values if value is not None)
+                else:
+                    self.lamp_is_on = self.status.manual_intensity > 0
             if self.status.schedule_enabled is not None:
                 self.is_auto_mode = self.status.schedule_enabled
-                self.mode = MODE_AUTO if self.is_auto_mode else self.mode
+                if self.is_auto_mode:
+                    self.mode = MODE_AUTO
+                else:
+                    channel_values = (self.status.pwm0, self.status.pwm1, self.status.pwm2, self.status.pwm3)
+                    has_output = any(value > 0 for value in channel_values if value is not None)
+                    if has_output or (self.status.manual_intensity or 0) > 0:
+                        # A demo is still distinguishable only while this
+                        # controller has seen the command; after a restart,
+                        # report the observable lamp state as manual.
+                        if self.mode != MODE_DEMO:
+                            self.mode = MODE_MANUAL
+                    else:
+                        self.mode = MODE_OFF
             self._last_refresh_monotonic = time.monotonic()

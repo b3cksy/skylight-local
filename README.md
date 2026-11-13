@@ -52,6 +52,10 @@ Each configured lamp creates one config entry and one controller instance.
 
 ## Entities
 
+### Light
+
+- `Light` with brightness control and the preset color palette (`A1`..`F10`) as effects.
+
 ### Select
 
 - `Preset` (`A1`..`F10`)

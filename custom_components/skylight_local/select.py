@@ -44,6 +44,10 @@ class SkylightPresetSelect(SkylightEntity, SelectEntity):
     def current_option(self) -> str:
         return self._controller.selected_preset
 
+    async def async_update(self) -> None:
+        """Refresh the selected preset from the lamp's live status."""
+        await self._controller.refresh_diagnostics()
+
     async def async_select_option(self, option: str) -> None:
         await self._controller.apply_preset(option)
         self.async_write_ha_state()
@@ -63,6 +67,10 @@ class SkylightModeSelect(SkylightEntity, SelectEntity):
     @property
     def current_option(self) -> str:
         return self._controller.mode
+
+    async def async_update(self) -> None:
+        """Refresh the current mode from the lamp's live status."""
+        await self._controller.refresh_diagnostics()
 
     async def async_select_option(self, option: str) -> None:
         await self._controller.set_mode(option)

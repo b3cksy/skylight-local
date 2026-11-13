@@ -1,5 +1,5 @@
 DOMAIN = "skylight_local"
-PLATFORMS = ["sensor", "select", "number", "button", "switch"]
+PLATFORMS = ["sensor", "select", "number", "button", "switch", "light"]
 CONF_LAMP_IP = "lamp_ip"
 DATA_CONTROLLER = "controller"
 DEFAULT_POWER = 30
