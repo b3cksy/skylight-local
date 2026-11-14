@@ -46,11 +46,22 @@ If the button does not work, follow the manual HACS steps below.
 1. Copy `custom_components/skylight_local` into your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
 
-## Optional dashboard card
+## Dashboard card
 
-The Lovelace color-control card is maintained separately in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card). It requires this integration and uses its preset, power, mode, and read-only schedule data entities. See the card repository for installation and dashboard YAML configuration.
+The Lovelace color-control card is bundled with this integration and registered automatically when Home Assistant sets up Skylight Local. You no longer need to download the JavaScript file or add a dashboard resource manually. Add the card to a dashboard in YAML mode:
 
-The screenshot below shows the separate Lovelace card from the Skylight Local Card repository.
+```yaml
+type: custom:skylight-color-card
+name: Color management
+entity: select.skylight_local_preset
+power_entity: number.skylight_local_power
+mode_entity: select.skylight_local_mode
+schedule_entity: sensor.akwarium_skylight_local_schedule_data
+```
+
+Replace entity IDs if Home Assistant assigned different IDs to your lamp. `mode_entity` and `schedule_entity` can be omitted when the card can find the matching entities automatically.
+
+The screenshot below shows the Lovelace card bundled with Skylight Local. The standalone card source is maintained in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card).
 
 ![Skylight Local Card dashboard preview](docs/skylight-local-card-preview.png)
 

@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import hashlib
+import logging
+from pathlib import Path
 import re
 
 import voluptuous as vol
 
+from homeassistant.components import frontend
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -13,6 +18,11 @@ from homeassistant.core import ServiceCall
 
 from .api import SkylightController, SkylightHttpClient
 from .const import CONF_LAMP_IP, DATA_CONTROLLER, DOMAIN, PLATFORMS
+
+_LOGGER = logging.getLogger(__name__)
+_CARD_PATH = "/skylight-local/skylight-color-card.js"
+_CARD_FILE = Path(__file__).parent / "www" / "skylight-color-card.js"
+_CARD_REGISTERED = f"{DOMAIN}_frontend_card_registered"
 
 SERVICE_SET_CHANNEL = "set_channel"
 SERVICE_SET_ALL_CHANNELS = "set_all_channels"
@@ -111,6 +121,20 @@ SERVICE_SEND_RAW_SCHEMA = vol.Schema(
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up component-level services."""
     async_register_services(hass)
+    if not hass.data.get(_CARD_REGISTERED):
+        try:
+            card_hash = await hass.async_add_executor_job(
+                lambda: hashlib.sha256(_CARD_FILE.read_bytes()).hexdigest()[:12]
+            )
+            await hass.http.async_register_static_paths(
+                [StaticPathConfig(_CARD_PATH, _CARD_FILE, cache_headers=False)]
+            )
+            frontend.add_extra_js_url(hass, f"{_CARD_PATH}?v={card_hash}")
+            hass.data[_CARD_REGISTERED] = True
+            _LOGGER.debug("Registered bundled Skylight Local dashboard card")
+        except (OSError, RuntimeError) as err:
+            # Keep lamp control available even if the frontend file is missing.
+            _LOGGER.warning("Could not register bundled Skylight Local dashboard card: %s", err)
     return True
 
 
