@@ -23,6 +23,7 @@ Other Skylight models have not been verified and are not currently listed as sup
 - A Home Assistant light entity with on/off, brightness, and 60 preset effects (`A1`..`F10`).
 - Separate preset and mode selectors, plus buttons and a switch for Auto, Manual, Demo, and Off operation.
 - Power control from 0–100% and direct PWM controls for channels `0`–`3`.
+- A read-only `Current intensity` sensor that follows the schedule in Auto mode and the lamp-reported intensity in Manual mode.
 - Status and diagnostic sensors, plus services for schedules, clone/master configuration, maintenance, and raw commands.
 - Read-only schedule snapshot for cards that visualize the schedule stored in the lamp.
 
@@ -107,6 +108,7 @@ Each configured lamp creates one config entry and one controller instance.
 - `PWM channel 2`
 - `PWM channel 3`
 - `Manual intensity`
+- `Current intensity` (schedule-derived in Auto; lamp-reported in Manual; updates about every 30 seconds)
 - `Manual color`
 - `Calibration PWM`
 - `Schedule items count`

@@ -1,7 +1,7 @@
 {
   "domain": "skylight_local",
   "name": "Skylight Local",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "documentation": "https://github.com/b3cksy/skylight-local#readme",
   "issue_tracker": "https://github.com/b3cksy/skylight-local/issues",
   "codeowners": [

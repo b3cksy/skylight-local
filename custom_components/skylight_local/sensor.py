@@ -10,7 +10,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import SkylightController, SkylightStatus
-from .const import DATA_CONTROLLER, DOMAIN
+from .const import DATA_CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL, MODE_OFF
 from .entity import SkylightEntity
 
 
@@ -28,6 +28,7 @@ async def async_setup_entry(
         [
             SkylightFirmwareVersionSensor(entry, controller),
             SkylightModeSensor(entry, controller),
+            SkylightCurrentIntensitySensor(entry, controller),
             SkylightScheduleDataSensor(entry, controller),
             SkylightStatusAttributeSensor(
                 entry,
@@ -214,6 +215,36 @@ class SkylightModeSensor(SkylightBaseDiagnosticSensor):
     async def async_update(self) -> None:
         await super().async_update()
         self._attr_native_value = self._controller.mode
+
+
+class SkylightCurrentIntensitySensor(SkylightEntity, SensorEntity):
+    """Current intensity as shown by SL Control: schedule in auto, status in manual."""
+
+    _attr_name = "Current intensity"
+    _attr_icon = "mdi:brightness-percent"
+    _attr_native_unit_of_measurement = "%"
+
+    def __init__(self, entry: ConfigEntry, controller: SkylightController) -> None:
+        super().__init__(entry, controller)
+        self._attr_unique_id = f"{entry.entry_id}_current_intensity"
+        self._attr_native_value = None
+
+    async def async_update(self) -> None:
+        await self._controller.refresh_diagnostics()
+        if self._controller.mode == MODE_AUTO:
+            await self._controller.refresh_schedule_string(max_age=60)
+            self._attr_native_value = self._controller.current_scheduled_intensity()
+            return
+
+        status = self._controller.status
+        if self._controller.mode == MODE_MANUAL:
+            self._attr_native_value = None if status is None else status.manual_intensity
+        elif self._controller.mode == MODE_OFF and status is not None:
+            channels = (status.pwm0, status.pwm1, status.pwm2, status.pwm3)
+            self._attr_native_value = 0 if all(value == 0 for value in channels) else None
+        else:
+            # Demo output changes dynamically and has no single intensity value.
+            self._attr_native_value = None
 
 
 class SkylightScheduleDataSensor(SkylightEntity, SensorEntity):

@@ -522,6 +522,54 @@ class SkylightController:
                 return
             await self.read_schedule_string()
 
+    def current_scheduled_intensity(self) -> float | None:
+        """Return the intensity interpolated from the lamp's schedule at its current time."""
+        if not self.schedule_string or self.status is None or not self.status.time:
+            return None
+
+        try:
+            hour, minute = (int(part) for part in self.status.time.split(":")[:2])
+            if hour not in range(24) or minute not in range(60):
+                return None
+            minute_now = hour * 60 + minute
+        except (TypeError, ValueError):
+            return None
+
+        points: list[tuple[int, float]] = []
+        for row in self.schedule_string.split(":"):
+            if not row:
+                continue
+            fields = row.split(";")
+            if len(fields) < 5:
+                continue
+            try:
+                point_hour = int(fields[0])
+                point_minute = int(fields[1])
+                intensity = float(fields[4])
+            except ValueError:
+                continue
+            if point_hour not in range(24) or point_minute not in range(60):
+                continue
+            if not 0 <= intensity <= 100:
+                continue
+            points.append((point_hour * 60 + point_minute, intensity))
+
+        points.sort(key=lambda point: point[0])
+        if not points:
+            return None
+        if len(points) == 1:
+            return points[0][1]
+
+        previous = next((point for point in reversed(points) if point[0] <= minute_now), None)
+        next_point = next((point for point in points if point[0] > minute_now), None)
+        if previous is None:
+            previous = (points[-1][0] - 1440, points[-1][1])
+        if next_point is None:
+            next_point = (points[0][0] + 1440, points[0][1])
+
+        fraction = (minute_now - previous[0]) / (next_point[0] - previous[0])
+        return round(previous[1] + (next_point[1] - previous[1]) * fraction)
+
     async def read_status_g8(self) -> str:
         response = await self._client.read_status_g8()
         self.last_raw_response = response
@@ -537,6 +585,10 @@ class SkylightController:
             self.firmware_version = await self._client.get_firmware_version()
             status_raw = await self._client.get_status_page()
             self.status = parse_status_page(status_raw)
+            if self.status.manual_intensity is not None:
+                # Keep the number entity aligned with the value currently
+                # reported by the lamp (including changes made in SL Control).
+                self.power = max(0, min(100, round(self.status.manual_intensity)))
             if self.status.manual_color is not None:
                 color_code = int(self.status.manual_color)
                 if preset := _COLOR_CODE_TO_PRESET.get(color_code):
