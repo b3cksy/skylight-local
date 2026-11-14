@@ -89,7 +89,7 @@ Each configured lamp creates one config entry and one controller instance.
 
 ### Number
 
-- `Power` (0-100%): applies the current preset at the chosen output level.
+- `Power` (0-100%): applies the current preset at the chosen output level in Manual mode. In Auto mode, the schedule controls intensity.
 - `Channel 0` (0-100%)
 - `Channel 1` (0-100%)
 - `Channel 2` (0-100%)

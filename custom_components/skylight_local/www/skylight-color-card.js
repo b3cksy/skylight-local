@@ -47,6 +47,7 @@ class SkylightColorCard extends HTMLElement {
     this._scheduleTimer = null;
     window.clearInterval(this._powerRefreshTimer);
     this._powerRefreshTimer = null;
+    this._clearPendingIntensity();
   }
 
   setConfig(config) {
@@ -68,7 +69,8 @@ class SkylightColorCard extends HTMLElement {
   }
 
   async _refreshPower() {
-    if (!this._hass || document.visibilityState === "hidden" || this._refreshingPower) return;
+    if (!this._hass || document.visibilityState === "hidden" || this._refreshingPower
+      || this._intensityDragging || this._pendingIntensity != null || this._currentMode() === "auto") return;
     this._refreshingPower = true;
     try {
       await this._hass.callService("homeassistant", "update_entity", {
@@ -184,6 +186,7 @@ class SkylightColorCard extends HTMLElement {
           line-height: 1;
           cursor: pointer;
         }
+        .step:disabled, input[type="range"]:disabled { opacity: .45; cursor: not-allowed; }
         .range-wrap { min-width: 0; }
         .range-label { display: none; }
         input[type="range"] {
@@ -354,6 +357,14 @@ class SkylightColorCard extends HTMLElement {
     const currentEffect = reportedPreset || state.state;
     const modeEntity = this._findModeEntity();
     const modeState = modeEntity ? this._hass.states[modeEntity]?.state : null;
+    const currentMode = modeState || "manual";
+    const autoMode = currentMode === "auto";
+    this._intensityInput.disabled = autoMode;
+    this._intensityInput.title = autoMode ? "Switch to Manual mode to adjust intensity." : "";
+    this.shadowRoot.querySelectorAll(".step").forEach((button) => {
+      button.disabled = autoMode;
+      button.title = autoMode ? "Switch to Manual mode to adjust intensity." : "";
+    });
     const scheduleEntity = this.config.schedule_entity || `sensor.${objectId}_schedule_data`;
     const scheduleState = this._hass.states[scheduleEntity] || Object.entries(this._hass.states)
       .find(([entityId]) => entityId.startsWith("sensor.") && entityId.endsWith(`_${objectId}_schedule_data`))?.[1];
@@ -364,9 +375,15 @@ class SkylightColorCard extends HTMLElement {
     const manualIntensity = Number.isFinite(reportedIntensity)
       ? Math.max(0, Math.min(100, reportedIntensity))
       : null;
-    const intensity = modeState === "auto"
+    if (currentMode === "auto") {
+      this._clearPendingIntensity();
+    } else if (this._pendingIntensity != null && manualIntensity != null
+      && Math.abs(manualIntensity - this._pendingIntensity) <= 1) {
+      this._clearPendingIntensity();
+    }
+    const intensity = currentMode === "auto"
       ? (this._currentScheduledIntensity() ?? manualIntensity)
-      : manualIntensity;
+      : (this._pendingIntensity ?? manualIntensity);
     const channelValues = [0, 1, 2, 3].map((channel) => {
       const channelState = this._hass.states[`sensor.${objectId}_pwm_channel_${channel}`];
       const value = channelState ? Number(channelState.state) : NaN;
@@ -390,7 +407,6 @@ class SkylightColorCard extends HTMLElement {
       button.setAttribute("aria-pressed", String(button.dataset.effect === activePreset));
     });
 
-    const currentMode = modeState || "manual";
     this.shadowRoot.querySelectorAll(".mode").forEach((button) => {
       const supported = !["superior", "clone"].includes(button.dataset.mode);
       button.disabled = !modeEntity || !supported;
@@ -421,6 +437,11 @@ class SkylightColorCard extends HTMLElement {
     const baseName = objectId.replace(/_preset$/, "");
     const candidate = `select.${baseName}_mode`;
     return this._hass.states[candidate] ? candidate : null;
+  }
+
+  _currentMode() {
+    const modeEntity = this._findModeEntity();
+    return modeEntity ? this._hass.states[modeEntity]?.state : null;
   }
 
   _currentScheduledIntensity() {
@@ -470,6 +491,7 @@ class SkylightColorCard extends HTMLElement {
     const percent = Math.max(0, Math.min(100, Math.round(value)));
     this._intensityInput.value = String(percent);
     this._intensityValue.textContent = `${percent}%`;
+    this._intensityHeading.textContent = `${percent}%`;
   }
 
   _renderSchedule() {
@@ -609,19 +631,40 @@ class SkylightColorCard extends HTMLElement {
   }
 
   _changeIntensity(delta) {
-    const next = Math.max(0, Math.min(100, this._currentIntensity() + delta));
+    if (this._currentMode() === "auto") return;
+    const next = Math.max(0, Math.min(100, (this._pendingIntensity ?? this._currentIntensity()) + delta));
     this._showIntensity(next);
     this._sendIntensity(next);
   }
 
   _sendIntensity(brightness) {
+    if (this._currentMode() === "auto") return;
     const percent = Math.max(0, Math.min(100, Math.round(brightness)));
+    this._clearPendingIntensity();
+    this._pendingIntensity = percent;
+    this._showIntensity(percent);
+    this._pendingIntensityTimer = window.setTimeout(() => {
+      this._clearPendingIntensity();
+      this._update();
+    }, 20_000);
     this._hass.callService("number", "set_value", {
       entity_id: this.config.power_entity,
       // number.set_value validates this as a JSON number; passing a string
       // can be rejected by Home Assistant before the integration sees it.
       value: percent,
+    }).catch((error) => {
+      console.error("Unable to set Skylight intensity", error);
+      this._clearPendingIntensity();
+      this._update();
     });
+  }
+
+  _clearPendingIntensity() {
+    if (this._pendingIntensityTimer) {
+      window.clearTimeout(this._pendingIntensityTimer);
+      this._pendingIntensityTimer = null;
+    }
+    this._pendingIntensity = null;
   }
 
   _selectMode(mode) {

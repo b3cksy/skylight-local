@@ -54,6 +54,7 @@ class SkylightPowerNumber(SkylightEntity, NumberEntity):
     async def async_update(self) -> None:
         """Refresh the manual power value from the lamp's live status."""
         await self._controller.refresh_diagnostics()
+        self.async_write_ha_state()
 
     async def async_set_native_value(self, value: float) -> None:
         await self._controller.set_power_and_apply(round(value))

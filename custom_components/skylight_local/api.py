@@ -295,6 +295,7 @@ class SkylightController:
         self._refresh_lock = asyncio.Lock()
         self._command_lock = asyncio.Lock()
         self._last_refresh_monotonic = 0.0
+        self._last_command_monotonic = 0.0
         self._last_schedule_read_monotonic = 0.0
         self._schedule_read_lock = asyncio.Lock()
         self.selected_preset = "A1"
@@ -317,6 +318,7 @@ class SkylightController:
         async with self._command_lock:
             self.set_power(power)
             await self._apply_preset(self.selected_preset)
+            self._last_command_monotonic = time.monotonic()
 
     def _ctrl_with_power(self, preset: str) -> str:
         base = PRESETS[preset]
@@ -347,6 +349,7 @@ class SkylightController:
 
         async with self._command_lock:
             await self._apply_preset(target_preset)
+            self._last_command_monotonic = time.monotonic()
 
     async def _apply_preset(self, target_preset: str) -> None:
         """Send one complete preset update without interleaving another slider call."""
@@ -367,24 +370,30 @@ class SkylightController:
 
     async def set_auto_mode(self) -> None:
         """Switch lamp to automatic schedule mode."""
-        await self._client.set_auto_mode()
-        self.is_auto_mode = True
-        self.mode = MODE_AUTO
-        self.lamp_is_on = True
+        async with self._command_lock:
+            await self._client.set_auto_mode()
+            self.is_auto_mode = True
+            self.mode = MODE_AUTO
+            self.lamp_is_on = True
+            self._last_command_monotonic = time.monotonic()
 
     async def set_off_mode(self) -> None:
         """Turn lamp off by disabling AUTO mode."""
-        await self._client.set_off_mode()
-        self.is_auto_mode = False
-        self.mode = MODE_OFF
-        self.lamp_is_on = False
+        async with self._command_lock:
+            await self._client.set_off_mode()
+            self.is_auto_mode = False
+            self.mode = MODE_OFF
+            self.lamp_is_on = False
+            self._last_command_monotonic = time.monotonic()
 
     async def set_demo_mode(self) -> None:
         """Enable demo mode."""
-        await self._client.set_demo_mode()
-        self.is_auto_mode = False
-        self.mode = MODE_DEMO
-        self.lamp_is_on = True
+        async with self._command_lock:
+            await self._client.set_demo_mode()
+            self.is_auto_mode = False
+            self.mode = MODE_DEMO
+            self.lamp_is_on = True
+            self._last_command_monotonic = time.monotonic()
 
     async def set_mode(self, mode: str) -> None:
         if mode == MODE_AUTO:
@@ -592,38 +601,45 @@ class SkylightController:
             if now - self._last_refresh_monotonic < 1.0:
                 return
 
-            self.firmware_version = await self._client.get_firmware_version()
-            status_raw = await self._client.get_status_page()
-            self.status = parse_status_page(status_raw)
-            if self.status.manual_intensity is not None:
-                # Keep the number entity aligned with the value currently
-                # reported by the lamp (including changes made in SL Control).
-                self.power = max(0, min(100, round(self.status.manual_intensity)))
-            if self.status.manual_color is not None:
-                color_code = int(self.status.manual_color)
-                if preset := _COLOR_CODE_TO_PRESET.get(color_code):
-                    self.selected_preset = preset
-            if self.status.schedule_enabled:
-                self.lamp_is_on = True
-            elif self.status.manual_intensity is not None:
-                channel_values = (self.status.pwm0, self.status.pwm1, self.status.pwm2, self.status.pwm3)
-                if all(value is not None for value in channel_values):
-                    self.lamp_is_on = any(value > 0 for value in channel_values if value is not None)
-                else:
-                    self.lamp_is_on = self.status.manual_intensity > 0
-            if self.status.schedule_enabled is not None:
-                self.is_auto_mode = self.status.schedule_enabled
-                if self.is_auto_mode:
-                    self.mode = MODE_AUTO
-                else:
+            async with self._command_lock:
+                now = time.monotonic()
+                if now - self._last_command_monotonic < 2.0:
+                    return
+
+                # A diagnostic read must not overlap a command. Otherwise the
+                # lamp can return a pre-command snapshot and reset power/mode.
+                self.firmware_version = await self._client.get_firmware_version()
+                status_raw = await self._client.get_status_page()
+                self.status = parse_status_page(status_raw)
+                if self.status.manual_intensity is not None:
+                    # Keep the number entity aligned with the value currently
+                    # reported by the lamp (including changes made in SL Control).
+                    self.power = max(0, min(100, round(self.status.manual_intensity)))
+                if self.status.manual_color is not None:
+                    color_code = int(self.status.manual_color)
+                    if preset := _COLOR_CODE_TO_PRESET.get(color_code):
+                        self.selected_preset = preset
+                if self.status.schedule_enabled:
+                    self.lamp_is_on = True
+                elif self.status.manual_intensity is not None:
                     channel_values = (self.status.pwm0, self.status.pwm1, self.status.pwm2, self.status.pwm3)
-                    has_output = any(value > 0 for value in channel_values if value is not None)
-                    if has_output or (self.status.manual_intensity or 0) > 0:
-                        # A demo is still distinguishable only while this
-                        # controller has seen the command; after a restart,
-                        # report the observable lamp state as manual.
-                        if self.mode != MODE_DEMO:
-                            self.mode = MODE_MANUAL
+                    if all(value is not None for value in channel_values):
+                        self.lamp_is_on = any(value > 0 for value in channel_values if value is not None)
                     else:
-                        self.mode = MODE_OFF
-            self._last_refresh_monotonic = time.monotonic()
+                        self.lamp_is_on = self.status.manual_intensity > 0
+                if self.status.schedule_enabled is not None:
+                    self.is_auto_mode = self.status.schedule_enabled
+                    if self.is_auto_mode:
+                        self.mode = MODE_AUTO
+                    else:
+                        channel_values = (self.status.pwm0, self.status.pwm1, self.status.pwm2, self.status.pwm3)
+                        has_output = any(value > 0 for value in channel_values if value is not None)
+                        if has_output or (self.status.manual_intensity or 0) > 0:
+                            # A demo is still distinguishable only while this
+                            # controller has seen the command; after a restart,
+                            # report the observable lamp state as manual.
+                            if self.mode != MODE_DEMO:
+                                self.mode = MODE_MANUAL
+                        else:
+                            self.mode = MODE_OFF
+                self._last_refresh_monotonic = time.monotonic()
