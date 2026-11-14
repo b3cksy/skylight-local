@@ -61,6 +61,8 @@ schedule_entity: sensor.akwarium_skylight_local_schedule_data
 
 Replace entity IDs if Home Assistant assigned different IDs to your lamp. `mode_entity` and `schedule_entity` can be omitted when the card can find the matching entities automatically.
 
+The card shows a warning icon on the **Manual** button while manual mode is active and the automatic schedule is paused.
+
 The screenshot below shows the Lovelace card bundled with Skylight Local. The standalone card source is maintained in the [Skylight Local Card repository](https://github.com/b3cksy/skylight-local-card).
 
 ![Skylight Local Card dashboard preview](docs/skylight-local-card-preview.png)

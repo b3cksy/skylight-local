@@ -206,6 +206,9 @@ class SkylightColorCard extends HTMLElement {
         .mode { min-height:54px; padding:8px 3px; border:0; color:#eef7ff; background:transparent; font-size:16px; font-weight:400; cursor:pointer; }
         .mode:hover, .mode[aria-pressed="true"] { color:#9dff7f; background:transparent; font-weight:700; }
         .mode:disabled { opacity:.4; cursor:not-allowed; }
+        .manual-warning { display:inline-grid; width:16px; height:16px; margin-left:4px; vertical-align:middle; color:#ffca28; }
+        .manual-warning[hidden] { display:none; }
+        .manual-warning svg { display:block; width:100%; height:100%; }
         .mode[data-mode="superior"], .mode[data-mode="demo"], .mode[data-mode="off"], .mode[data-mode="clone"] { grid-row:2; }
         .mode[data-mode="superior"] { grid-column:3; }
         .mode[data-mode="demo"] { grid-column:1; }
@@ -250,7 +253,7 @@ class SkylightColorCard extends HTMLElement {
           </div>
           <div class="app-modes" role="group" aria-label="Lamp mode">
             <button class="mode" type="button" data-mode="auto">Auto</button>
-            <button class="mode" type="button" data-mode="manual">Manual</button>
+            <button class="mode" type="button" data-mode="manual">Manual<span class="manual-warning" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5 1.5 21h21L12 2.5Z"/><path fill="#27313b" d="M11 8h2v7h-2zm0 9h2v2h-2z"/></svg></span></button>
             <button class="mode" type="button" data-mode="superior" disabled>Master</button>
             <button class="mode" type="button" data-mode="demo">Demo</button>
             <button class="mode" type="button" data-mode="off">Off</button>
@@ -409,13 +412,25 @@ class SkylightColorCard extends HTMLElement {
 
     this.shadowRoot.querySelectorAll(".mode").forEach((button) => {
       const supported = !["superior", "clone"].includes(button.dataset.mode);
+      const manualIsActive = button.dataset.mode === "manual" && modeState === "manual";
       button.disabled = !modeEntity || !supported;
       button.setAttribute("aria-pressed", String(button.dataset.mode === currentMode));
-      button.title = !supported
+      const defaultTitle = !supported
         ? "This mode is not supported by the integration yet."
         : button.disabled && !modeEntity
           ? "Set mode_entity in the card configuration to control this mode."
           : "";
+      button.title = manualIsActive
+        ? "Manual mode is active. The automatic schedule is paused."
+        : defaultTitle;
+      if (button.dataset.mode === "manual") {
+        button.querySelector(".manual-warning").hidden = !manualIsActive;
+        if (manualIsActive) {
+          button.setAttribute("aria-label", "Manual mode. Warning: automatic schedule is paused.");
+        } else {
+          button.removeAttribute("aria-label");
+        }
+      }
     });
   }
 
