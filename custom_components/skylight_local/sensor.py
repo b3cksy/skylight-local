@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .api import SkylightController, SkylightStatus
 from .const import DATA_CONTROLLER, DOMAIN, MODE_AUTO, MODE_MANUAL, MODE_OFF
@@ -15,6 +18,7 @@ from .entity import SkylightEntity
 
 
 StatusGetter = Callable[[SkylightController, SkylightStatus | None], str | int | float | None]
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -230,11 +234,18 @@ class SkylightCurrentIntensitySensor(SkylightEntity, SensorEntity):
         self._attr_native_value = None
 
     async def async_update(self) -> None:
-        await self._controller.refresh_diagnostics()
         if self._controller.mode == MODE_AUTO:
-            await self._controller.refresh_schedule_string(max_age=60)
-            self._attr_native_value = self._controller.current_scheduled_intensity()
+            try:
+                await self._controller.refresh_schedule_string(max_age=60)
+            except HomeAssistantError as err:
+                _LOGGER.debug("Could not refresh lamp schedule for intensity: %s", err)
+            self._attr_native_value = self._controller.current_scheduled_intensity(dt_util.now())
             return
+
+        try:
+            await self._controller.refresh_diagnostics()
+        except HomeAssistantError as err:
+            _LOGGER.debug("Could not refresh lamp diagnostics for intensity: %s", err)
 
         status = self._controller.status
         if self._controller.mode == MODE_MANUAL:

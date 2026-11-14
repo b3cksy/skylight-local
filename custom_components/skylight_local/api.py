@@ -522,18 +522,28 @@ class SkylightController:
                 return
             await self.read_schedule_string()
 
-    def current_scheduled_intensity(self) -> float | None:
-        """Return the intensity interpolated from the lamp's schedule at its current time."""
-        if not self.schedule_string or self.status is None or not self.status.time:
+    def current_scheduled_intensity(self, now: datetime | None = None) -> float | None:
+        """Return the schedule intensity for the supplied local time.
+
+        The status endpoint can lag behind the schedule endpoint. Callers may
+        provide Home Assistant's local time so Auto intensity remains usable
+        even when the lamp's status clock is temporarily unavailable.
+        """
+        if not self.schedule_string:
             return None
 
-        try:
-            hour, minute = (int(part) for part in self.status.time.split(":")[:2])
-            if hour not in range(24) or minute not in range(60):
+        if now is not None:
+            minute_now = now.hour * 60 + now.minute
+        else:
+            if self.status is None or not self.status.time:
                 return None
-            minute_now = hour * 60 + minute
-        except (TypeError, ValueError):
-            return None
+            try:
+                hour, minute = (int(part) for part in self.status.time.split(":")[:2])
+                if hour not in range(24) or minute not in range(60):
+                    return None
+                minute_now = hour * 60 + minute
+            except (TypeError, ValueError):
+                return None
 
         points: list[tuple[int, float]] = []
         for row in self.schedule_string.split(":"):
