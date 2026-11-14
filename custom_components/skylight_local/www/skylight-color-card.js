@@ -204,7 +204,8 @@ class SkylightColorCard extends HTMLElement {
         input[type="range"]::-webkit-slider-thumb { appearance:none; width:16px; height:42px; border:2px solid #111; border-radius:7px; background:linear-gradient(#fff,#a8b5c0); }
         .modebar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:0 -12px; background:#2196ed; }
         .mode { min-height:54px; padding:8px 3px; border:0; color:#eef7ff; background:transparent; font-size:16px; font-weight:400; cursor:pointer; }
-        .mode:hover, .mode[aria-pressed="true"] { color:#9dff7f; background:transparent; font-weight:700; }
+        .mode[aria-pressed="true"] { color:#9dff7f; background:rgba(255,255,255,.12); font-weight:700; }
+        .mode:hover:not(:disabled):not([aria-pressed="true"]) { color:#fff; background:rgba(255,255,255,.08); }
         .mode:disabled { opacity:.4; cursor:not-allowed; }
         .manual-warning { display:inline-grid; width:16px; height:16px; margin-left:4px; vertical-align:middle; color:#ffca28; }
         .manual-warning[hidden] { display:none; }
