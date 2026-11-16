@@ -1,8 +1,11 @@
 # Skylight Local
 
-[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.11-blue.svg)](https://www.home-assistant.io/blog/2026/11/04/release-202611/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/b3cksy/skylight-local?logo=github)](https://github.com/b3cksy/skylight-local/releases/latest)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange)](https://my.home-assistant.io/redirect/hacs_repository/?owner=b3cksy&repository=skylight-local&category=integration)
+[![Home Assistant](https://img.shields.io/badge/Home_Assistant-2026.11%2B-18BCF2?logo=homeassistant&logoColor=white)](https://github.com/b3cksy/skylight-local#installation)
+[![Local control](https://img.shields.io/badge/Local_control-HTTP-success)](https://github.com/b3cksy/skylight-local#features)
+[![License](https://img.shields.io/github/license/b3cksy/skylight-local)](https://github.com/b3cksy/skylight-local/blob/main/LICENSE)
+[![Community](https://img.shields.io/badge/Community-Discussion-41BDF5?logo=homeassistant&logoColor=white)](https://community.home-assistant.io/t/1034895)
 
 Skylight Local is an unofficial Home Assistant integration for controlling compatible Skylight lamps over their local HTTP API. It communicates directly with the lamp on your local network; no vendor cloud account is used. The integration is configured through Home Assistant's UI and creates entities for everyday control as well as diagnostics and maintenance.
 
